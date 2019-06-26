@@ -1,0 +1,64 @@
+编辑 /etc/logrotate.d/nginx：
+vim /etc/logrotate.d/nginx
+将以下代码写入：
+/home/trio/Nginx/logs/*.log {
+    su root trio
+    daily
+    dateext
+    missingok
+    compress
+    rotate 7
+    createolddir 775 trio trio
+    olddir /home/trio/Nginx/logs/old
+    create 664 trio trio
+    notifempty
+    sharedscripts
+    postrotate
+        [[ -f /home/trio/Nginx/logs/nginx.pid ]] && kill -USR1 $(cat /home/trio/Nginx/logs/nginx.pid) || \
+        /home/trio/Nginx/sbin/nginx  -s reload -c /home/trio/Nginx/conf/nginx.conf
+    endscript
+}
+编辑 /etc/anacrontab
+vim /etc/anacrontab
+默认这个参数是这样：
+START_HOURS_RANGE=3-22
+改为
+START_HOURS_RANGE=1-5
+# /etc/anacrontab: configuration file for anacron
+# See anacron(8) and anacrontab(5) for details.
+SHELL=/bin/sh
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+MAILTO=root
+# the maximal random delay added to the base delay of the jobs
+RANDOM_DELAY=45
+# the jobs will be started during the following hours only
+START_HOURS_RANGE=1-5     
+#period in days   delay in minutes   job-identifier   command
+1       5       cron.daily              nice run-parts /etc/cron.daily
+7       25      cron.weekly             nice run-parts /etc/cron.weekly
+@monthly 45     cron.monthly            nice run-parts /etc/cron.monthly
+如果有php，则编辑/etc/logrotate.d/php
+vim /etc/logrotate.d/php
+写入以下内容
+/home/trio/php/log/*.log {
+    su root trio
+    daily
+    dateext
+    missingok
+    compress
+    rotate 7
+    createolddir 775 trio trio
+    olddir /home/trio/php/log/old
+    create 644 trio trio
+    notifempty
+    sharedscripts
+    postrotate
+        /bin/kill -SIGUSR1 `cat /home/trio/php/run/php-fpm.pid 2>/dev/null` 2>/dev/null || true
+    endscript
+}
+注意：
+     确认以下几个路径文件存在：
+/home/trio/Nginx/logs/nginx.pid
+/home/trio/php/run/php-fpm.pid
+注意关闭防火墙
+

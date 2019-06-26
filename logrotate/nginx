@@ -1,0 +1,17 @@
+/home/trio/Nginx/logs/*.log {
+    su root trio
+    daily
+    dateext
+    missingok
+    compress
+    rotate 7
+    createolddir 775 trio trio
+    olddir /home/trio/Nginx/logs/old
+    create 664 trio trio
+    notifempty
+    sharedscripts
+    postrotate
+        [[ -f /home/trio/Nginx/logs/nginx.pid ]] && kill -USR1 $(cat /home/trio/Nginx/logs/nginx.pid) || \
+        /home/trio/Nginx/sbin/nginx  -s reload -c /home/trio/Nginx/conf/nginx.conf
+    endscript
+}

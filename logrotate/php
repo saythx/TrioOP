@@ -1,0 +1,16 @@
+/home/trio/php/log/*.log {
+    su root trio
+    daily
+    dateext
+    missingok
+    compress
+    rotate 7
+    createolddir 775 trio trio
+    olddir /home/trio/php/log/old
+    create 644 trio trio
+    notifempty
+    sharedscripts
+    postrotate
+        kill -USR1 `cat /home/trio/php/run/php-fpm.pid`
+    endscript
+}
