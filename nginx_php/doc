@@ -1,0 +1,165 @@
+#################################################################
+nginx1.14 && php7.3  编译参数
+php编译文档
+https://github.com/gitKearney/php7-from-scratch
+
+#nginx 1.14：
+./configure --prefix=/home/trio/nginx14 --user=trio --group=trio --with-threads --with-file-aio --with-http_ssl_module --with-http_v2_module --with-http_sub_module --with-http_gzip_static_module --with-http_stub_status_module --with-pcre --with-zlib=/home/trio/nginx-1.14.2/zlib-1.2.11 --with-openssl
+ 
+#php 7.3：
+./configure --prefix=/home/trio/php --enable-fpm --with-fpm-user=trio --with-fpm-group=trio --enable-inline-optimization --disable-debug --enable-shared --enable-soap --with-xmlrpc '--with-openssl'  '--with-openssl-dir' --with-pcre-regex --with-sqlite3 --with-zlib  '--with-zlib-dir' --enable-libxml --enable-pcntl --enable-xml '--enable-bcmath' '--with-iconv' '--with-iconv-dir=/usr/local/lib' '--with-bz2' '--enable-calendar' '--with-curl' '--with-cdb' '--enable-dom' '--enable-exif' '--enable-fileinfo' '--enable-filter' '--with-pcre-dir' '--enable-ftp' '--with-gd'  '--with-jpeg-dir' '--with-png-dir' '--with-freetype-dir'  '--enable-gd-jis-conv' '--with-gettext' '--with-gmp' '--with-mhash' '--enable-json' '--enable-mbstring' '--enable-mbregex' '--enable-mbregex-backtrack' '--with-onig' '--enable-pdo' '--with-mysqli=mysqlnd' '--with-pdo-mysql=mysqlnd' '--with-pdo-sqlite' '--with-readline' '--enable-session' '--enable-shmop' '--enable-simplexml' '--enable-sockets' '--enable-sysvmsg' '--enable-sysvsem' '--enable-sysvshm' '--enable-wddx' '--with-libxml-dir' '--with-xsl'  '--enable-mysqlnd-compression-support' '--with-pear' '--enable-opcache' '--enable-zip'  '--without-pear'   '--with-ldap'  '--with-libzip=/usr/lib/x86_64-linux-gnu' '--with-curl'  '--with-mysql-sock' 
+编辑MakeFile，找到 117行 开头是 ‘EXTRA_LIBS’ 这一行 在结尾加上 ‘-llber’ ：
+
+1
+EXTRA_LIBS = ... -llber
+
+ 
+wget  http://pear.php.net/go-pear.phar 
+/usr/local/php/bin/php go-pear.phar
+
+php添加redis扩展
+下载扩展包
+https://github.com/phpredis/phpredis/releases
+解压并进入目录
+运行命令
+/home/trio/php73/bin/phpize   #用phpize生成configure配置文件
+ 
+/usr/local/php7/bin/phpize 
+ 
+./configure --with-php-config=/home/trio/php73/bin/php-config  #配置
+ 
+make  #编译
+ 
+make install  #安装
+php.ini中添加：
+extension="redis.so"
+
+#################################################################
+nginx平滑升级
+http://www.zsythink.net/archives/3260
+
+准备好编译环境，下载最新源码包，配置configure，截止1.14.2，nginx没有特殊依赖环境，只需要基础编译环境：
+./configure --prefix=/home/trio/Nginx --user=trio --group=trio --with-threads --with-file-aio --with-http_ssl_module --with-http_v2_module --with-http_sub_module --with-http_gzip_static_module --with-http_stub_status_module --with-pcre --with-zlib= --with-openssl=                #编译服务器执行
+make            #编译服务器执行
+make install    #非升级服务器不要执行
+make upgrade    #非升级服务器不要执行
+如果编译的nginx不是安装在编译环境，则不要执行make  install 和make upgrade，打包源码包，放到需要升级的服务器上，执行剩余两个命令。
+源码进行make install时会进行检测，如果第6行显示有旧的nginx，则重命名为nginx.old，运行中的nginx是加载在内存中的，改变文件名称不会改变元数据，所以不影响程序运行，其他信息显示同样不会改变配置文件，当检测到有这些文件后只会生成 *.default文件。
+以下是make install 输出：
+make -f objs/Makefile install
+make[1]: Entering directory `/home/trio/source-package/nginx-1.14.2'
+test -d '/home/trio/Nginx' || mkdir -p '/home/trio/Nginx'
+test -d '/home/trio/Nginx/sbin' \
+        || mkdir -p '/home/trio/Nginx/sbin'
+test ! -f '/home/trio/Nginx/sbin/nginx' \
+        || mv '/home/trio/Nginx/sbin/nginx' \
+                '/home/trio/Nginx/sbin/nginx.old'
+cp objs/nginx '/home/trio/Nginx/sbin/nginx'
+test -d '/home/trio/Nginx/conf' \
+        || mkdir -p '/home/trio/Nginx/conf'
+cp conf/koi-win '/home/trio/Nginx/conf'
+cp conf/koi-utf '/home/trio/Nginx/conf'
+cp conf/win-utf '/home/trio/Nginx/conf'
+test -f '/home/trio/Nginx/conf/mime.types' \
+        || cp conf/mime.types '/home/trio/Nginx/conf'
+cp conf/mime.types '/home/trio/Nginx/conf/mime.types.default'
+test -f '/home/trio/Nginx/conf/fastcgi_params' \
+        || cp conf/fastcgi_params '/home/trio/Nginx/conf'
+cp conf/fastcgi_params \
+        '/home/trio/Nginx/conf/fastcgi_params.default'
+test -f '/home/trio/Nginx/conf/fastcgi.conf' \
+        || cp conf/fastcgi.conf '/home/trio/Nginx/conf'
+cp conf/fastcgi.conf '/home/trio/Nginx/conf/fastcgi.conf.default'
+test -f '/home/trio/Nginx/conf/uwsgi_params' \
+        || cp conf/uwsgi_params '/home/trio/Nginx/conf'
+cp conf/uwsgi_params \
+        '/home/trio/Nginx/conf/uwsgi_params.default'
+test -f '/home/trio/Nginx/conf/scgi_params' \
+        || cp conf/scgi_params '/home/trio/Nginx/conf'
+cp conf/scgi_params \
+        '/home/trio/Nginx/conf/scgi_params.default'
+test -f '/home/trio/Nginx/conf/nginx.conf' \
+        || cp conf/nginx.conf '/home/trio/Nginx/conf/nginx.conf'
+cp conf/nginx.conf '/home/trio/Nginx/conf/nginx.conf.default'
+test -d '/home/trio/Nginx/logs' \
+        || mkdir -p '/home/trio/Nginx/logs'
+test -d '/home/trio/Nginx/logs' \
+        || mkdir -p '/home/trio/Nginx/logs'
+test -d '/home/trio/Nginx/html' \
+        || cp -R html '/home/trio/Nginx'
+test -d '/home/trio/Nginx/logs' \
+        || mkdir -p '/home/trio/Nginx/logs'
+make[1]: Leaving directory `/home/trio/source-package/nginx-1.14.2'
+源码包Makefile，显示make支持以下命令,upgrade是用来平滑升级的：
+default:        build
+clean:
+        rm -rf Makefile objs
+build:
+        $(MAKE) -f objs/Makefile
+install:
+        $(MAKE) -f objs/Makefile install
+modules:
+        $(MAKE) -f objs/Makefile modules
+upgrade:
+        /home/trio/Nginx/sbin/nginx -t
+        kill -USR2 `cat /home/trio/Nginx/logs/nginx.pid`      #正在运行的nginx主进程停止接受新连接，子进程处理完成请求后退出，最后只剩主进程。同时启动新的主进程，新的主进程创建子进程开始接受请求。
+        sleep 1
+        test -f /home/trio/Nginx/logs/nginx.pid.oldbin
+        kill -QUIT `cat /home/trio/Nginx/logs/nginx.pid.oldbin`    #旧的主进程退出
+
+#################################################################
+php7.3 编译安装及配置，扩展redis示例
+安装环境依赖：
+yum install -y readline-devel gmp-devel curl-devel bzip2-devel autoconf m4
+configure 参数：
+./configure --prefix=/home/trio/php73 --enable-fpm --with-fpm-user=trio --with-fpm-group=trio --enable-inline-optimization --disable-debug --enable-shared --enable-soap --with-xmlrpc --with-openssl  --with-pcre-regex --with-sqlite3 --with-zlib --enable-libxml --enable-pcntl --enable-xml '--enable-bcmath' '--with-iconv' '--with-bz2' '--enable-calendar' '--with-curl' '--with-cdb' '--enable-dom' '--enable-exif' '--enable-fileinfo' '--enable-filter' '--with-pcre-dir' '--enable-ftp' '--with-gd' '--with-openssl-dir' '--with-jpeg-dir' '--with-png-dir' '--with-freetype-dir'  '--enable-gd-jis-conv' '--with-gettext' '--with-gmp' '--with-mhash' '--enable-json' '--enable-mbstring' '--enable-mbregex' '--enable-mbregex-backtrack' '--with-onig' '--enable-pdo' '--with-mysqli=mysqlnd' '--with-pdo-mysql=mysqlnd' '--with-zlib-dir' '--with-pdo-sqlite' '--with-readline' '--enable-session' '--enable-shmop' '--enable-simplexml' '--enable-sockets' '--enable-sysvmsg' '--enable-sysvsem' '--enable-sysvshm' '--enable-wddx' '--with-libxml-dir' '--with-xsl'  '--enable-mysqlnd-compression-support' '--with-pear' '--enable-opcache'
+make
+make install
+复制php.ini
+cp /home/trio/source-package/php-7.3.1/php.ini-production /home/trio/php73/lib/php.ini
+程序目录填补：
+mkdir /home/trio/php73/log
+mkdir /home/trio/php73/run
+需要修改的配置文件参数：
+error_reporting = E_ALL & ~E_DEPRECATED & ~E_STRICT & ~E_NOTICE
+error_log = /home/trio/php73/log/php_errors.log
+extension_dir = "/home/trio/php73/lib/php/extensions/no-debug-non-zts-20180731/"
+extension="redis.so"
+
+pid = run/php-fpm.pid
+error_log = log/php-fpm.log
+log_level = warning
+
+pm.max_children = 5000
+pm.start_servers = 10
+pm.min_spare_servers = 10
+pm.max_spare_servers = 20
+pm.max_requests = 50000
+pm.status_path = /status
+ping.path = /ping
+ping.response = pong
+access.format = "%R - %u %t \"%m %r%Q%q\" %s %f %{mili}d %{kilo}M %C%%"
+slowlog = log/$pool.slow.log
+request_slowlog_trace_depth = 20
+request_terminate_timeout = 120
+php快速启停脚本：
+#!/bin/bash
+kill -USR2 `cat /home/trio/php73/run/php-fpm.pid`
+
+#!/bin/bash
+/home/trio/php73/sbin/php-fpm -c /home/trio/php73/lib/php.ini -p /home/trio/php73 -y /home/trio/php73/etc/php-fpm.conf
+
+#!/bin/bash
+kill -QUIT `cat /home/trio/php73/run/php-fpm.pid`
+php扩展redis模块：
+下载phpredis源码包，选择最新版：
+http://pecl.php.net/package/redis
+解压后进出源码包，使用php脚本生成configure文件,并用configure文件编译,最终会生成一个extension_dir 路径，注意不一定一样，将这个路径添加进lib/php.in，重启：
+cd /home/trio/source-package/redis-4.2.0
+/home/trio/php73/bin/phpize
+./configure --with-php-config=/home/trio/php73/bin/php-config
+make
+make install
+extension_dir = "/home/trio/php73/lib/php/extensions/no-debug-non-zts-20180731/"
+extension="redis.so"
+
